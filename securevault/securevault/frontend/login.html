@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 – SecureVault</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <div class="auth-box card">
+
+    <div style="text-align:center; margin-bottom:1.75rem;">
+      <div style="font-size:2.5rem; margin-bottom:.5rem;">🔐</div>
+      <h1>로그인</h1>
+      <p class="subtitle">SecureVault에 오신 걸 환영합니다</p>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username">아이디</label>
+        <input
+          type="text"
+          id="username"
+          class="form-control"
+          placeholder="아이디를 입력하세요"
+          autocomplete="username"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">비밀번호</label>
+        <input
+          type="password"
+          id="password"
+          class="form-control"
+          placeholder="비밀번호를 입력하세요"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submit-btn">
+        로그인
+      </button>
+
+      <div style="display:flex; align-items:center; gap:.75rem; margin-top:1.25rem;">
+        <hr style="flex:1; border-color:var(--border);" />
+        <span class="text-muted text-sm">또는</span>
+        <hr style="flex:1; border-color:var(--border);" />
+      </div>
+
+      <button type="button" class="btn btn-outline" onclick="apiKeycloakLogin()"
+              style="margin-top:.75rem;">
+        🔑 Keycloak으로 로그인하기
+      </button>
+    </form>
+
+    <p class="text-sm text-muted" style="text-align:center; margin-top:1.5rem;">
+      계정이 없으신가요?
+      <a href="/register.html">회원가입</a>
+    </p>
+  </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/auth.js"></script>
+<script>
+  // 이미 로그인된 경우 대시보드로 이동
+  redirectIfLoggedIn();
+
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideAlert("alert");
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    const btn      = document.getElementById("submit-btn");
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div>';
+
+    const result = await apiLogin(username, password);
+
+    btn.disabled = false;
+    btn.textContent = "로그인";
+
+    if (result.ok) {
+      window.location.href = "/dashboard.html";
+    } else {
+      showAlert("alert", result.data?.error || "로그인에 실패했습니다.", "error");
+    }
+  });
+</script>
+</body>
+</html>

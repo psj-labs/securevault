@@ -1,0 +1,19 @@
+# /etc/systemd/system/flask.service
+
+[Unit]
+Description=SecureVault Flask API
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/opt/securevault/backend
+EnvironmentFile=/opt/securevault/backend/.env
+ExecStart=/opt/securevault/backend/venv/bin/gunicorn \
+    --bind 127.0.0.1:5000 \
+    --workers 2 \
+    "app:create_app()"
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

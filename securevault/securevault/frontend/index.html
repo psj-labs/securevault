@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureVault – 엔터프라이즈 파일 관리</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- 네비게이션 바 -->
+<header class="navbar">
+  <div class="brand"><span>Secure</span>Vault</div>
+  <nav>
+    <a href="/index.html" class="active">홈</a>
+    <a href="/login.html">로그인</a>
+    <a href="/register.html">회원가입</a>
+  </nav>
+</header>
+
+<!-- Hero 섹션 -->
+<section style="
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; min-height:calc(100vh - 60px);
+  text-align:center; padding:2rem;
+  background: radial-gradient(ellipse at 50% 30%, #1e1b4b 0%, #0f172a 65%);
+">
+  <div style="max-width:640px;">
+    <div style="font-size:4rem; margin-bottom:1rem;">🛡️</div>
+    <h1 style="font-size:2.8rem; font-weight:800; line-height:1.2; margin-bottom:1rem;">
+      안전한 파일 관리<br/>팀 협업 플랫폼
+    </h1>
+    <p style="color:var(--muted); font-size:1.1rem; margin-bottom:2.5rem; line-height:1.7;">
+      SecureVault는 엔터프라이즈 등급의 보안으로 파일을 관리하고<br/>
+      팀원과 안전하게 협업할 수 있는 플랫폼입니다.
+    </p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+      <a href="/register.html" class="btn btn-primary" style="padding:.8rem 2rem;">
+        무료로 시작하기
+      </a>
+      <a href="/login.html" class="btn btn-outline" style="padding:.8rem 2rem;">
+        로그인
+      </a>
+    </div>
+  </div>
+
+  <!-- 기능 카드 -->
+  <div style="
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+    gap:1.5rem; max-width:860px; width:100%; margin-top:5rem;
+  ">
+    <div class="card" style="text-align:left;">
+      <div style="font-size:1.8rem; margin-bottom:.75rem;">📁</div>
+      <h3 style="margin-bottom:.5rem;">파일 업로드</h3>
+      <p class="text-muted text-sm">드래그 앤 드롭으로 손쉽게 파일을 업로드하세요.</p>
+    </div>
+    <div class="card" style="text-align:left;">
+      <div style="font-size:1.8rem; margin-bottom:.75rem;">👤</div>
+      <h3 style="margin-bottom:.5rem;">팀 관리</h3>
+      <p class="text-muted text-sm">팀원을 초대하고 권한을 세밀하게 제어하세요.</p>
+    </div>
+    <div class="card" style="text-align:left;">
+      <div style="font-size:1.8rem; margin-bottom:.75rem;">🔑</div>
+      <h3 style="margin-bottom:.5rem;">SSO 인증</h3>
+      <p class="text-muted text-sm">엔터프라이즈 SSO로 안전하게 로그인하세요.</p>
+    </div>
+  </div>
+</section>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/auth.js"></script>
+<script>redirectIfLoggedIn();</script>
+</body>
+</html>

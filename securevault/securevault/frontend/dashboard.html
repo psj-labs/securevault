@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>대시보드 – SecureVault</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <style>
+    .notice-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .notice-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: .35rem; }
+    .notice-card .meta {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-bottom: .6rem;
+      display: flex;
+      gap: 1rem;
+    }
+    .notice-card .body { font-size: .9rem; line-height: 1.6; white-space: pre-wrap; }
+    .notice-card .attachment {
+      margin-top: .75rem;
+      padding-top: .75rem;
+      border-top: 1px solid var(--border);
+      font-size: .85rem;
+    }
+    .notice-card .attachment a { color: var(--primary); }
+
+    /* admin 전용 등록 폼 */
+    #admin-panel { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- 네비게이션 바 -->
+<header class="navbar">
+  <div class="brand"><span>Secure</span>Vault</div>
+  <nav>
+    <a href="/dashboard.html" class="active">대시보드</a>
+    <a href="/profile.html">프로필</a>
+    <div id="nav-user" class="flex gap-2 items-center"></div>
+  </nav>
+</header>
+
+<div class="dashboard-wrapper">
+
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <ul class="sidebar-menu">
+      <li><a href="/dashboard.html" class="active">📊 대시보드</a></li>
+      <li><a href="/profile.html">👤 내 프로필</a></li>
+      <li><a href="#notice-section">📢 공지사항</a></li>
+    </ul>
+  </aside>
+
+  <!-- 메인 컨텐츠 -->
+  <main class="main-content">
+
+    <!-- 환영 메시지 + 통계 -->
+    <div class="section-header">
+      <h2 id="welcome-msg">환영합니다!</h2>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:2rem;">
+      <div class="stat-card">
+        <div class="label">내 계정 ID</div>
+        <div class="value blue" id="stat-id">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">역할</div>
+        <div class="value green" id="stat-role">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">이메일</div>
+        <div class="value" id="stat-email" style="font-size:1rem;margin-top:.5rem;">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">가입일</div>
+        <div class="value" id="stat-date" style="font-size:1rem;margin-top:.5rem;">–</div>
+      </div>
+    </div>
+
+    <!-- ── 공지사항 섹션 ─────────────────────────────────────────────────── -->
+    <section id="notice-section" style="margin-bottom:2rem;">
+      <div class="section-header">
+        <h2>📢 공지사항</h2>
+        <button id="btn-new-notice" class="btn btn-primary btn-sm"
+                style="display:none; width:auto;"
+                onclick="toggleAdminPanel()">
+          + 새 공지 작성
+        </button>
+      </div>
+
+      <!-- admin 전용: 공지 등록 폼 -->
+      <div id="admin-panel" class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;">공지사항 등록</h3>
+        <div id="alert-notice" class="alert"></div>
+
+        <form id="notice-form" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="n-title">제목</label>
+            <input type="text" id="n-title" class="form-control"
+                   placeholder="공지 제목" required />
+          </div>
+
+          <div class="form-group">
+            <label for="n-content">내용</label>
+            <textarea id="n-content" class="form-control"
+                      rows="4" placeholder="공지 내용을 입력하세요." required
+                      style="resize:vertical;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="n-file">첨부파일 (선택)</label>
+            <p class="text-muted text-sm" style="margin-bottom:.5rem;">
+              허용 형식: jpg, png, gif, pdf, docx, xlsx, zip 등
+            </p>
+            <input type="file" id="n-file" class="form-control"
+                   style="padding:.5rem;" />
+          </div>
+
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm"
+                    id="notice-submit-btn" style="width:auto;">
+              등록
+            </button>
+            <button type="button" class="btn btn-outline btn-sm"
+                    onclick="toggleAdminPanel()">
+              취소
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 공지사항 목록 -->
+      <div id="notices-list">
+        <p class="text-muted text-sm">불러오는 중...</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/auth.js"></script>
+<script>
+  // ── Keycloak OAuth 콜백 처리 (URL 파라미터 → localStorage) ───────────
+  (function handleOAuthCallback() {
+    const params   = new URLSearchParams(window.location.search);
+    const token    = params.get("token");
+    const authType = params.get("auth_type");
+    if (token && authType === "keycloak") {
+      localStorage.setItem("access_token", token);
+      localStorage.setItem("auth_type", "keycloak");
+      window.history.replaceState({}, document.title, "/dashboard.html");
+    }
+  })();
+
+  requireAuth();
+
+  // ── 페이지 초기화 ──────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", async () => {
+    let user = getCurrentUser();
+    if (!user && localStorage.getItem("auth_type") === "keycloak") {
+      const meResult = await apiGetMe();
+      if (meResult.ok && meResult.data) {
+        localStorage.setItem("user", JSON.stringify(meResult.data));
+        user = meResult.data;
+      }
+    }
+
+    if (user) {
+      document.getElementById("welcome-msg").textContent  = `안녕하세요, ${user.username}님!`;
+      document.getElementById("stat-id").textContent      = user.id ?? "–";
+      document.getElementById("stat-role").textContent    = user.role ?? "–";
+      document.getElementById("stat-email").textContent   = user.email ?? "–";
+      document.getElementById("stat-date").textContent    =
+        user.created_at ? user.created_at.slice(0,10) : "–";
+
+      if (user.role === "admin") {
+        document.getElementById("btn-new-notice").style.display = "inline-flex";
+      }
+    }
+
+    await loadNotices();
+  });
+
+  // ── 공지사항 불러오기 ──────────────────────────────────────────────────
+  async function loadNotices() {
+    const result = await apiFetch("/api/notices");
+    const container = document.getElementById("notices-list");
+
+    if (!result.ok) {
+      container.innerHTML = `<p class="text-muted text-sm">공지사항을 불러올 수 없습니다.</p>`;
+      return;
+    }
+
+    const notices = result.data;
+    if (!notices.length) {
+      container.innerHTML = `<p class="text-muted text-sm">등록된 공지사항이 없습니다.</p>`;
+      return;
+    }
+
+    container.innerHTML = notices.map(n => `
+      <div class="notice-card">
+        <h4>${escHtml(n.title)}</h4>
+        <div class="meta">
+          <span>✍️ ${escHtml(n.author ?? "–")}</span>
+          <span>🕐 ${n.created_at ? n.created_at.slice(0,10) : "–"}</span>
+        </div>
+        <div class="body">${escHtml(n.content)}</div>
+        ${n.file_url ? `
+          <div class="attachment">
+            📎 첨부파일:
+            <a href="${escHtml(n.file_url)}" target="_blank">${escHtml(n.filename)}</a>
+          </div>` : ""}
+      </div>
+    `).join("");
+  }
+
+  // ── admin 패널 토글 ────────────────────────────────────────────────────
+  function toggleAdminPanel() {
+    const panel = document.getElementById("admin-panel");
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+  }
+
+  // ── 공지 등록 제출 ─────────────────────────────────────────────────────
+  document.getElementById("notice-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideAlert("alert-notice");
+
+    const title   = document.getElementById("n-title").value.trim();
+    const content = document.getElementById("n-content").value.trim();
+    const fileEl  = document.getElementById("n-file");
+    const btn     = document.getElementById("notice-submit-btn");
+
+    const fd = new FormData();
+    fd.append("title",   title);
+    fd.append("content", content);
+    if (fileEl.files[0]) fd.append("file", fileEl.files[0]);
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div>';
+
+    const token = getToken();
+    const res = await fetch(`${API_BASE}/api/notices`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    const data = await res.json().catch(() => null);
+
+    btn.disabled = false;
+    btn.textContent = "등록";
+
+    if (res.ok) {
+      showAlert("alert-notice", "공지사항이 등록되었습니다.", "success");
+      document.getElementById("notice-form").reset();
+      await loadNotices();
+    } else {
+      showAlert("alert-notice", data?.error || "등록 실패", "error");
+    }
+  });
+
+  // XSS 방지용 이스케이프
+  function escHtml(str) {
+    return String(str ?? "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+</script>
+</body>
+</html>

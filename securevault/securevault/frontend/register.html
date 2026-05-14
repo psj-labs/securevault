@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>회원가입 – SecureVault</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <div class="auth-box card">
+
+    <div style="text-align:center; margin-bottom:1.75rem;">
+      <div style="font-size:2.5rem; margin-bottom:.5rem;">✨</div>
+      <h1>회원가입</h1>
+      <p class="subtitle">무료 계정을 만들고 시작하세요</p>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="register-form">
+      <div class="form-group">
+        <label for="username">아이디</label>
+        <input
+          type="text"
+          id="username"
+          class="form-control"
+          placeholder="영문/숫자 조합"
+          autocomplete="username"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="email">이메일</label>
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          placeholder="example@email.com"
+          autocomplete="email"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">비밀번호</label>
+        <input
+          type="password"
+          id="password"
+          class="form-control"
+          placeholder="8자 이상"
+          autocomplete="new-password"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password2">비밀번호 확인</label>
+        <input
+          type="password"
+          id="password2"
+          class="form-control"
+          placeholder="비밀번호 재입력"
+          autocomplete="new-password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submit-btn">
+        계정 만들기
+      </button>
+
+      <div style="display:flex; align-items:center; gap:.75rem; margin-top:1.25rem;">
+        <hr style="flex:1; border-color:var(--border);" />
+        <span class="text-muted text-sm">또는</span>
+        <hr style="flex:1; border-color:var(--border);" />
+      </div>
+
+      <button type="button" class="btn btn-outline" onclick="apiKeycloakLogin()"
+              style="margin-top:.75rem;">
+        🔑 Keycloak으로 로그인하기
+      </button>
+    </form>
+
+    <p class="text-sm text-muted" style="text-align:center; margin-top:1.5rem;">
+      이미 계정이 있으신가요?
+      <a href="/login.html">로그인</a>
+    </p>
+  </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/auth.js"></script>
+<script>
+  redirectIfLoggedIn();
+
+  document.getElementById("register-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideAlert("alert");
+
+    const username  = document.getElementById("username").value.trim();
+    const email     = document.getElementById("email").value.trim();
+    const password  = document.getElementById("password").value;
+    const password2 = document.getElementById("password2").value;
+    const btn       = document.getElementById("submit-btn");
+
+    if (password !== password2) {
+      showAlert("alert", "비밀번호가 일치하지 않습니다.", "error");
+      return;
+    }
+
+    if (password.length < 8) {
+      showAlert("alert", "비밀번호는 8자 이상이어야 합니다.", "error");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div>';
+
+    const result = await apiRegister(username, password, email);
+
+    btn.disabled = false;
+    btn.textContent = "계정 만들기";
+
+    if (result.ok) {
+      showAlert("alert", "회원가입 성공! 로그인 페이지로 이동합니다.", "success");
+      setTimeout(() => { window.location.href = "/login.html"; }, 1500);
+    } else {
+      showAlert("alert", result.data?.error || "회원가입에 실패했습니다.", "error");
+    }
+  });
+</script>
+</body>
+</html>

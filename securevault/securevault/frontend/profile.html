@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>프로필 – SecureVault</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- 네비게이션 바 -->
+<header class="navbar">
+  <div class="brand">🔐 <span>Secure</span>Vault</div>
+  <nav>
+    <a href="/dashboard.html">대시보드</a>
+    <a href="/profile.html" class="active">프로필</a>
+    <div id="nav-user" class="flex gap-2 items-center"></div>
+  </nav>
+</header>
+
+<div class="dashboard-wrapper">
+
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <ul class="sidebar-menu">
+      <li><a href="/dashboard.html">📊 대시보드</a></li>
+      <li><a href="/profile.html" class="active">👤 내 프로필</a></li>
+      <li><a href="/dashboard.html#upload-section">📁 파일 업로드</a></li>
+    </ul>
+  </aside>
+
+  <!-- 메인 컨텐츠 -->
+  <main class="main-content">
+    <div class="section-header">
+      <h2>내 프로필</h2>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start;">
+
+      <!-- 프로필 카드 -->
+      <div class="card">
+        <div class="profile-avatar" id="avatar-letter">?</div>
+        <h3 id="profile-username" style="font-size:1.4rem; font-weight:700;">–</h3>
+        <p class="text-muted text-sm mt-1" id="profile-email">–</p>
+        <div style="margin-top:.75rem;">
+          <span class="badge" id="profile-role-badge">–</span>
+        </div>
+        <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border);">
+          <p class="text-sm text-muted">계정 ID</p>
+          <p id="profile-id" style="font-weight:600; margin-top:.2rem;">–</p>
+        </div>
+        <div style="margin-top:.75rem;">
+          <p class="text-sm text-muted">가입일</p>
+          <p id="profile-date" style="font-weight:600; margin-top:.2rem;">–</p>
+        </div>
+      </div>
+
+      <!-- 정보 수정 폼 -->
+      <div class="card">
+        <h3 style="margin-bottom:1.25rem;">정보 수정</h3>
+        <div id="alert-profile" class="alert"></div>
+
+        <form id="profile-form">
+          <div class="form-group">
+            <label for="edit-email">이메일</label>
+            <input
+              type="email"
+              id="edit-email"
+              class="form-control"
+              placeholder="새 이메일"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-current-password">현재 비밀번호</label>
+            <input
+              type="password"
+              id="edit-current-password"
+              class="form-control"
+              placeholder="현재 비밀번호 입력"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-password">새 비밀번호 <span class="text-muted text-sm">(선택)</span></label>
+            <input
+              type="password"
+              id="edit-password"
+              class="form-control"
+              placeholder="8자 이상"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-password2">새 비밀번호 확인</label>
+            <input
+              type="password"
+              id="edit-password2"
+              class="form-control"
+              placeholder="새 비밀번호 재입력"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="profile-submit-btn">
+            저장
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/auth.js"></script>
+<script>
+  requireAuth();
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    let user = getCurrentUser();
+    if (!user && localStorage.getItem("auth_type") === "keycloak") {
+      const meResult = await apiGetMe();
+      if (meResult.ok && meResult.data) {
+        localStorage.setItem("user", JSON.stringify(meResult.data));
+        user = meResult.data;
+      }
+    }
+    if (!user) return;
+
+    document.getElementById("avatar-letter").textContent    = user.username?.[0]?.toUpperCase() ?? "?";
+    document.getElementById("profile-username").textContent = user.username;
+    document.getElementById("profile-email").textContent    = user.email;
+    document.getElementById("profile-id").textContent       = user.id;
+    document.getElementById("profile-date").textContent     = user.created_at ? user.created_at.slice(0,10) : "–";
+
+    const badge = document.getElementById("profile-role-badge");
+    badge.textContent = user.role;
+    badge.className   = `badge badge-${user.role}`;
+
+    document.getElementById("edit-email").value = user.email;
+  });
+
+  document.getElementById("profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideAlert("alert-profile");
+
+    const email           = document.getElementById("edit-email").value.trim();
+    const currentPassword = document.getElementById("edit-current-password").value;
+    const newPassword     = document.getElementById("edit-password").value;
+    const confirmPassword = document.getElementById("edit-password2").value;
+    const btn             = document.getElementById("profile-submit-btn");
+
+    const payload = {};
+    if (email) payload.email = email;
+
+    if (newPassword) {
+      if (newPassword.length < 8) {
+        showAlert("alert-profile", "비밀번호는 8자 이상이어야 합니다.", "error");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showAlert("alert-profile", "새 비밀번호가 일치하지 않습니다.", "error");
+        return;
+      }
+      payload.current_password = currentPassword;
+      payload.password         = newPassword;
+      payload.confirm_password = confirmPassword;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div>';
+
+    const result = await apiUpdateMe(payload);
+
+    btn.disabled = false;
+    btn.textContent = "저장";
+
+    if (result.ok) {
+      showAlert("alert-profile", "정보가 수정되었습니다.", "success");
+      localStorage.setItem("user", JSON.stringify(result.data.user));
+    } else {
+      showAlert("alert-profile", result.data?.error || "수정 실패", "error");
+    }
+  });
+</script>
+</body>
+</html>
